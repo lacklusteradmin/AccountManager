@@ -7,7 +7,6 @@ use zeroize::Zeroize;
 use crate::crypto::key_to_hex;
 use crate::model::{Account, Field, Group};
 
-
 pub struct Db {
     conn: Connection,
 }
@@ -88,7 +87,8 @@ impl Db {
                 })
             })
             .map_err(|e| e.to_string())?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(|e| e.to_string())
     }
 
     pub fn add_group(&self, name: &str) -> Result<i64, String> {
@@ -131,7 +131,10 @@ impl Db {
 
     pub fn rename_group(&self, id: i64, name: &str) -> Result<(), String> {
         self.conn
-            .execute("UPDATE groups SET name = ?1 WHERE id = ?2", params![name, id])
+            .execute(
+                "UPDATE groups SET name = ?1 WHERE id = ?2",
+                params![name, id],
+            )
             .map_err(|e| e.to_string())?;
         Ok(())
     }

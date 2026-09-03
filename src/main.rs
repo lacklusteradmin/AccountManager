@@ -7,11 +7,11 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+use iced::widget::text_input::Id as TextInputId;
 use iced::widget::{
     button, column, container, horizontal_rule, horizontal_space, radio, row, scrollable, text,
     text_input, vertical_space,
 };
-use iced::widget::text_input::Id as TextInputId;
 use iced::{Alignment, Color, Element, Length, Subscription, Task, Theme};
 use zeroize::Zeroize;
 
@@ -172,14 +172,7 @@ const PREF_COL_FIELD_PREFIX: &str = "col.field.";
 const PREF_QUICK_ADD: &str = "quick_add";
 const PREF_AUTO_LOCK: &str = "auto_lock_seconds";
 
-const DEFAULT_QUICK_ADD: &[&str] = &[
-    "email",
-    "username",
-    "region",
-    "phone",
-    "id",
-    "notes",
-];
+const DEFAULT_QUICK_ADD: &[&str] = &["email", "username", "region", "phone", "id", "notes"];
 
 fn encode_quick_add(list: &[String]) -> String {
     list.join("\n")
@@ -308,9 +301,10 @@ impl App {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        let any_timeout = self.tabs.iter().any(|s| {
-            matches!(s, Screen::Main(st) if st.auto_lock.seconds().is_some())
-        });
+        let any_timeout = self
+            .tabs
+            .iter()
+            .any(|s| matches!(s, Screen::Main(st) if st.auto_lock.seconds().is_some()));
         if any_timeout {
             iced::time::every(Duration::from_secs(1)).map(|_| Message::Tick)
         } else {
@@ -442,7 +436,7 @@ impl App {
                     }
                 }
             }
-            Message::CreateCancel => *self.active_mut() =Screen::Start,
+            Message::CreateCancel => *self.active_mut() = Screen::Start,
 
             Message::UnlockPasswordChanged(s) => {
                 if let Screen::Unlock(st) = self.active_mut() {
@@ -461,9 +455,9 @@ impl App {
                     }
                 }
             }
-            Message::UnlockCancel => *self.active_mut() =Screen::Start,
+            Message::UnlockCancel => *self.active_mut() = Screen::Start,
 
-            Message::LockProfile => *self.active_mut() =Screen::Start,
+            Message::LockProfile => *self.active_mut() = Screen::Start,
             Message::SelectGroup(id) => {
                 if let Screen::Main(st) = self.active_mut() {
                     st.selected_group = Some(id);
@@ -626,15 +620,12 @@ impl App {
                     let d = delta as f32;
                     match col {
                         ColumnId::Site => {
-                            st.site_width = (st.site_width + d)
-                                .clamp(MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH);
+                            st.site_width =
+                                (st.site_width + d).clamp(MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH);
                             let _ = st.db.set_pref(PREF_COL_SITE, &st.site_width.to_string());
                         }
                         ColumnId::Field(k) => {
-                            let cur = *st
-                                .field_widths
-                                .get(&k)
-                                .unwrap_or(&DEFAULT_FIELD_WIDTH);
+                            let cur = *st.field_widths.get(&k).unwrap_or(&DEFAULT_FIELD_WIDTH);
                             let new_w = (cur + d).clamp(MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH);
                             st.field_widths.insert(k.clone(), new_w);
                             let pref_key = format!("{PREF_COL_FIELD_PREFIX}{k}");
@@ -1161,10 +1152,13 @@ fn create_profile_view(st: &CreateProfileState) -> Element<'_, Message> {
             .size(12)
             .color(MUTED),
         vertical_space().height(Length::Fixed(6.0)),
-        text_input("Master password (leave blank for unencrypted)", &st.password)
-            .on_input(Message::CreatePasswordChanged)
-            .secure(true)
-            .padding(10),
+        text_input(
+            "Master password (leave blank for unencrypted)",
+            &st.password
+        )
+        .on_input(Message::CreatePasswordChanged)
+        .secure(true)
+        .padding(10),
         text_input("Confirm password", &st.confirm)
             .on_input(Message::CreateConfirmChanged)
             .on_submit(Message::CreateSubmit)
@@ -1361,8 +1355,7 @@ fn main_view(st: &MainState) -> Element<'_, Message> {
 
     let header = container(
         row![
-            text(format!("Profile: {}", display_name(&st.db_path)))
-                .size(18),
+            text(format!("Profile: {}", display_name(&st.db_path))).size(18),
             horizontal_space(),
             button(text("Settings").size(13))
                 .padding([6, 14])
@@ -1399,8 +1392,8 @@ fn accounts_view(st: &MainState) -> Element<'_, Message> {
         .on_press_maybe(has_group.then_some(Message::NewAccount))
         .style(button::primary);
 
-    let header = row![text("Accounts").size(22), horizontal_space(), add_btn]
-        .align_y(Alignment::Center);
+    let header =
+        row![text("Accounts").size(22), horizontal_space(), add_btn].align_y(Alignment::Center);
 
     let search_bar = text_input("Search accounts…", &st.search)
         .on_input(Message::SearchChanged)
@@ -1416,8 +1409,7 @@ fn accounts_view(st: &MainState) -> Element<'_, Message> {
             .filter(|a| {
                 a.site.to_lowercase().contains(&q)
                     || a.fields.iter().any(|f| {
-                        f.key.to_lowercase().contains(&q)
-                            || f.value.to_lowercase().contains(&q)
+                        f.key.to_lowercase().contains(&q) || f.value.to_lowercase().contains(&q)
                     })
             })
             .collect()
@@ -1480,11 +1472,7 @@ fn accounts_table<'a>(st: &'a MainState, accounts: &[&'a Account]) -> Element<'a
     let site_len = Length::Fixed(st.site_width);
     let actions_len = Length::Fixed(ACTIONS_WIDTH);
     let field_len = |k: &str| -> Length {
-        Length::Fixed(
-            *st.field_widths
-                .get(k)
-                .unwrap_or(&DEFAULT_FIELD_WIDTH),
-        )
+        Length::Fixed(*st.field_widths.get(k).unwrap_or(&DEFAULT_FIELD_WIDTH))
     };
 
     let mut header_row =
@@ -1576,7 +1564,11 @@ fn editor_view<'a>(
     error: Option<&'a str>,
     presets: &'a [String],
 ) -> Element<'a, Message> {
-    let title = if e.id == 0 { "New Account" } else { "Edit Account" };
+    let title = if e.id == 0 {
+        "New Account"
+    } else {
+        "Edit Account"
+    };
 
     let mut col = column![
         text(title).size(24),
@@ -1684,7 +1676,15 @@ fn settings_view<'a>(
     quick_add: &'a [String],
 ) -> Element<'a, Message> {
     let mut col = column![
-        text("Settings").size(26),
+        row![
+            text("Settings").size(26),
+            horizontal_space(),
+            button(text("Back").size(14))
+                .padding([8, 18])
+                .on_press(Message::CloseSettings)
+                .style(button::secondary),
+        ]
+        .align_y(Alignment::Center),
         vertical_space().height(Length::Fixed(8.0)),
         text("AUTO-LOCK ON IDLE").size(11).color(MUTED),
         vertical_space().height(Length::Fixed(2.0)),
@@ -1789,12 +1789,6 @@ fn settings_view<'a>(
 
     col = col.push(vertical_space().height(Length::Fixed(14.0)));
     col = col.push(horizontal_rule(1));
-    col = col.push(
-        button(text("Back").size(14))
-            .padding([8, 18])
-            .on_press(Message::CloseSettings)
-            .style(button::secondary),
-    );
 
     let card = container(col.max_width(560))
         .padding(24)
